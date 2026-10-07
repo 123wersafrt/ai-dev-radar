@@ -745,25 +745,48 @@ function viewModels(){
 
 function viewStatus(){
   const svc = ST.services;
+  const ongoing = svc.flatMap(s => s.inc.filter(i => !String(i.s).startsWith('resolved')).map(i => ({...i, who: s.n})));
+  const history = svc.flatMap(s => s.inc.filter(i => String(i.s).startsWith('resolved')).map(i => ({...i, who: s.n})));
+  const nOk = svc.filter(s => s.st === 'ok').length;
   return `
   <h2 class="page">API 状态</h2>
-  <p class="lede">官方状态源聚合 · 抓取时间 ${ST.fetched}</p>
+  <p class="lede">聚合 ${svc.length} 家厂商官方状态源 · 抓取时间 ${ST.fetched}</p>
+
+  <div class="stat-row">
+    <div class="stat lo"><div class="lbl">运行正常</div><div class="val">${nOk}</div><div class="sub">共 ${svc.length} 家</div></div>
+    <div class="stat mi"><div class="lbl">部分降级</div><div class="val">${svc.filter(s=>s.st==='degraded').length}</div><div class="sub">需留意</div></div>
+    <div class="stat hi"><div class="lbl">进行中事故</div><div class="val">${ongoing.length}</div><div class="sub">${ongoing.length?'需处理':'暂无'}</div></div>
+    <div class="stat am"><div class="lbl">近期历史</div><div class="val">${history.length}</div><div class="sub">已恢复</div></div>
+  </div>
+
+  <div class="sec-h"><h3>各厂商状态</h3><span class="hint">数据来自各自官方状态页</span></div>
   ${svc.map(s => `
     <div class="svc">
       <span class="nm">${esc(s.n)}</span>
       <span class="st ${s.st==='ok'?'ok':s.st==='degraded'?'deg':'bad'}">${s.st==='ok'?'正常':s.st==='degraded'?'部分降级':'故障'}</span>
       <span style="font-size:12.5px;color:var(--tx3)">${esc(s.label)}</span>
-      <span class="meta">${s.comps} 个组件 · ${s.bad} 个异常</span>
+      <span class="meta">${s.bad > 0 ? `${s.bad} 个进行中事件` : '无进行中事件'}</span>
     </div>`).join('')}
-  <div class="sec-h"><h3>进行中的事故</h3></div>
-  ${svc.flatMap(s => s.inc.map(i => `
+
+  <div class="sec-h"><h3>进行中的事故</h3><span class="hint">${ongoing.length} 条</span></div>
+  ${ongoing.length ? ongoing.map(i => `
     <div class="inc">
       <div class="t">${esc(i.t)}</div>
-      <div class="s">${esc(s.n)} · 状态 ${esc(i.s)} · ${esc(i.d)}</div>
-    </div>`)).join('') || '<div class="empty"><span class="ic">◉</span>当前无进行中的事故</div>'}
+      <div class="s">${esc(i.who)} · ${esc(i.s)} · ${esc(i.d)}</div>
+    </div>`).join('') : '<div class="empty"><span class="ic">◉</span>当前无进行中的事故</div>'}
+
+  ${history.length ? `
+  <div class="sec-h"><h3>近期已恢复</h3><span class="hint">${history.length} 条</span></div>
+  ${history.slice(0,10).map(i => `
+    <div class="inc" style="border-left-color:var(--line2)">
+      <div class="t">${esc(i.t)}</div>
+      <div class="s">${esc(i.who)} · ${esc(i.s)} · ${esc(i.d)}</div>
+    </div>`).join('')}` : ''}
+
   <p style="font-size:11.5px;color:var(--tx4);margin-top:18px">
-    数据来自 OpenAI / Anthropic 官方状态页（statuspage.io 标准接口）。<br>
-    参考实现：<span style="color:var(--tx3)">study8677/ai-status-hub</span>（MIT）· 扩展端点见其 services.json。
+    数据源：OpenAI / Anthropic（statuspage.io 标准接口）· Google Cloud（incidents.json）·
+    xAI（RSS feed）· AWS（health 接口）。各家格式不一，已逐个适配解析。<br>
+    参考实现：<span style="color:var(--tx3)">study8677/ai-status-hub</span>（MIT）。
   </p>`;
 }
 

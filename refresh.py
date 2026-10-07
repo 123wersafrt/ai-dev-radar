@@ -11,7 +11,7 @@ AI Dev Radar · 数据更新脚本
     - tokencanopy/price  data/history/price_changes.csv 价格变化历史
     - OpenAI / Anthropic 官方状态页                     实时状态
 """
-import json, csv, sys, os, re, urllib.request, collections
+import json, csv, sys, os, re, datetime, collections, urllib.request
 
 sys.stdout.reconfigure(encoding='utf-8')
 csv.field_size_limit(10**9)
@@ -75,14 +75,19 @@ if cd is None:
 if not os.path.exists(models_path) or not os.path.exists(changes_path):
     print('缺少必要数据源，退出'); sys.exit(1)
 
-# 状态页
+# 状态页 —— 各厂商格式不一，逐个适配
 print('\n[2/4] 拉取官方状态页')
 status_services = []
-STATUS_SRC = [
-    ('OpenAI', 'https://status.openai.com/api/v2/summary.json'),
-    ('Claude', 'https://status.claude.com/api/v2/summary.json'),
-]
-for name, url in STATUS_SRC:
+
+
+def svc(name, st, label, comps, bad, inc):
+    status_services.append({'n': name, 'st': st, 'label': label,
+                            'comps': comps, 'bad': bad, 'inc': inc})
+
+
+# ① statuspage.io 标准接口（OpenAI / Anthropic）
+for name, url in [('OpenAI', 'https://status.openai.com/api/v2/summary.json'),
+                  ('Claude', 'https://status.claude.com/api/v2/summary.json')]:
     raw = fetch(url, None, f'{name} 状态页')
     if not raw:
         continue
@@ -91,15 +96,83 @@ for name, url in STATUS_SRC:
         comps = s.get('components', [])
         bad = [c for c in comps if c.get('status') not in ('operational', None)]
         st = 'ok' if not bad else ('degraded' if len(bad) < 3 else 'bad')
-        status_services.append({
-            'n': name, 'st': st,
-            'label': (s.get('status') or {}).get('description') or '—',
-            'comps': len(comps), 'bad': len(bad),
-            'inc': [{'t': i.get('name'), 's': i.get('status'), 'd': (i.get('created_at') or '')[:10]}
-                    for i in (s.get('incidents') or [])[:5]],
-        })
+        svc(name, st, (s.get('status') or {}).get('description') or '—', len(comps), len(bad),
+            [{'t': i.get('name'), 's': i.get('status'), 'd': (i.get('created_at') or '')[:10]}
+             for i in (s.get('incidents') or [])[:5]])
     except Exception as e:
         print(f'  ✗ 解析 {name} 失败: {e}')
+
+# ② Google Cloud：incidents.json 为历史事件；无 end 视为进行中
+raw = fetch('https://status.cloud.google.com/incidents.json', None, 'Google Cloud 状态')
+if raw:
+    try:
+        d = json.loads(raw)
+        active = [x for x in d if not x.get('end')]
+        recent = sorted(d, key=lambda y: y.get('begin') or '', reverse=True)
+        svc('Google Cloud',
+            'ok' if not active else ('degraded' if len(active) < 3 else 'bad'),
+            'All Services Operational' if not active else f'{len(active)} 个进行中的事件',
+            len(active), len(active),
+            [{'t': (x.get('external_desc') or '')[:160], 's': 'active' if not x.get('end') else 'resolved',
+              'd': (x.get('begin') or '')[:10]} for x in (active or recent)[:5]])
+    except Exception as e:
+        print(f'  ✗ 解析 Google Cloud 失败: {e}')
+
+# ③ xAI：RSS feed，正文含 Status / Severity
+raw = fetch('https://status.x.ai/feed.xml', None, 'xAI 状态')
+if raw:
+    try:
+        xml = raw.decode('utf-8', 'ignore')
+        items = re.findall(r'<item>(.*?)</item>', xml, re.S)
+        inc = []
+        for it in items[:8]:
+            t = re.search(r'<title>(.*?)</title>', it, re.S)
+            dt = re.search(r'<pubDate>(.*?)</pubDate>', it, re.S)
+            de = re.search(r'<description>(.*?)</description>', it, re.S)
+            body = (de.group(1) if de else '')
+            stt = re.search(r'Status:\s*([A-Za-z]+)', body)
+            sev = re.search(r'Severity:\s*([A-Za-z]+)', body)
+            inc.append({'t': (t.group(1) if t else '')[:160],
+                        's': ((stt.group(1) if stt else '?') + '/' + (sev.group(1) if sev else '?')).lower(),
+                        'd': (dt.group(1) if dt else '')[:16]})
+        unresolved = [i for i in inc if not i['s'].startswith('resolved')]
+        svc('xAI (Grok)',
+            'ok' if not unresolved else ('degraded' if len(unresolved) < 3 else 'bad'),
+            'All Systems Operational' if not unresolved else f'{len(unresolved)} 个未恢复事件',
+            len(unresolved), len(unresolved), inc[:5])
+    except Exception as e:
+        print(f'  ✗ 解析 xAI 失败: {e}')
+
+# ④ AWS：health 接口为 UTF-16 编码的 JSON，status 3 表示影响中
+raw = fetch('https://health.aws.amazon.com/public/currentevents', None, 'AWS 状态')
+if raw:
+    try:
+        d = None
+        for enc in ('utf-16', 'utf-16-le', 'utf-8-sig', 'utf-8'):
+            try:
+                d = json.loads(raw.decode(enc)); break
+            except Exception:
+                continue
+        if d is None:
+            raise ValueError('无法解码 AWS 响应')
+        inc = []
+        for x in d[:5]:
+            ts = x.get('date')
+            try:
+                dt = datetime.datetime.fromtimestamp(int(ts)).strftime('%Y-%m-%d')
+            except Exception:
+                dt = str(x.get('region_name') or '')
+            inc.append({'t': (x.get('summary') or x.get('service_name') or '')[:160],
+                        's': 'active' if str(x.get('status')) == '3' else str(x.get('status')),
+                        'd': dt})
+        svc('AWS',
+            'ok' if not d else ('degraded' if len(d) < 3 else 'bad'),
+            'Service is operating normally' if not d else f'{len(d)} 个进行中的事件',
+            len(d), len(d), inc)
+    except Exception as e:
+        print(f'  ✗ 解析 AWS 失败: {e}')
+
+print(f'  · 共 {len(status_services)} 个服务状态')
 
 # ============ 归一化 ============
 print('\n[3/4] 归一化 + 影响判断')
@@ -200,7 +273,7 @@ print('  影响分布:', collections.Counter(x[8] for x in changes))
 # ============ 输出 ============
 print('\n[4/4] 生成 data.js')
 payload = {
-    'meta': {'built': __import__('datetime').date.today().isoformat(),
+    'meta': {'built': datetime.date.today().isoformat(),
              'dateMin': dates[0], 'dateMax': dates[-1],
              'nChanges': len(changes), 'nModels': len(mods), 'nProvs': len(provs),
              'sources': ['models.dev', 'tokencanopy/price']},
@@ -208,7 +281,7 @@ payload = {
     'provs': provs, 'provnames': provnames,
     'changes': changes, 'models': mods,
 }
-status = {'fetched': __import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M'),
+status = {'fetched': datetime.datetime.now().strftime('%Y-%m-%d %H:%M'),
           'services': status_services}
 
 dst = os.path.join(BASE, 'data.js')
