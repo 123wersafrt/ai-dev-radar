@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Dev Radar · 追踪 AI 开发世界的每一次变化</title>
+<meta name="description" content="AI 开发世界的价格变化雷达：追踪 7,000+ 模型的价格变动、API 服务状态，判断每个变化对你意味着什么。">
+<meta property="og:title" content="AI Dev Radar · 追踪 AI 开发世界的每一次变化">
+<meta property="og:description" content="追踪 7,000+ 模型的价格变动与 API 状态，判断每个变化对你意味着什么。">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0f0d0b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f0d0b'/%3E%3Ccircle cx='16' cy='16' r='3.5' fill='%23e8a951'/%3E%3Ccircle cx='16' cy='16' r='8.5' fill='none' stroke='%23e8a951' stroke-width='1.6' opacity='.55'/%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%23e8a951' stroke-width='1.4' opacity='.25'/%3E%3C/svg%3E">
+<style>
+:root{
+  /* 表面层：靠明度 + 描边分层（深色 UI 相邻层 ΔE00 天然做不到 8，故 line 必须可见） */
+  --bg:#0f0d0b; --panel:#191612; --card:#231f1a; --card2:#2e2924;
+  --line:#423b34; --line2:#544b41;
+  /* 文字层：暖白系，永不使用彩色当正文 */
+  --tx:#f3eee5; --tx2:#cec4b4; --tx3:#ab9e8c; --tx4:#a09484;
+  /* 强调色：琥珀（品牌 + 中影响） */
+  --amber:#e8a951; --amber2:#f7cd7f; --amberbg:rgba(232,169,81,.13);
+  /* 状态色：中饱和，作色条/色点/标签，不直接做正文 */
+  --red:#ef8a6b; --redbg:rgba(239,138,107,.14);
+  --green:#8cbd72; --greenbg:rgba(140,189,114,.14);
+  /* 大字专用（25px+，需 Lc>=60）——语义同 red/green，仅提亮 */
+  --red-lg:#f5b39c; --green-lg:#b3d89b;
+  /* 标签 pill（深底浅字，内部对比 Lc>=80） */
+  --pill-high-bg:#43221b; --pill-high-fg:#f8d5c8;
+  --pill-mid-bg:#453218;  --pill-mid-fg:#f7e0b0;
+  --pill-low-bg:#22341f;  --pill-low-fg:#c9e4bd;
+  --mono:"SF Mono",ui-monospace,Consolas,"Cascadia Mono",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--tx);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:13.5px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  display:flex; overflow:hidden;
+}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#3a3229;border-radius:5px;border:2px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:#4d4236}
+
+/* ============ SIDEBAR ============ */
+aside{
+  width:216px; flex:0 0 216px; background:var(--panel);
+  border-right:1px solid var(--line); display:flex; flex-direction:column;
+  height:100vh; overflow-y:auto;
+}
+.brand{padding:20px 18px 16px; border-bottom:1px solid var(--line)}
+.brand .logo{display:flex; align-items:center; gap:9px; margin-bottom:5px}
+.brand .dot{
+  width:9px;height:9px;border-radius:50%;background:var(--amber);
+  box-shadow:0 0 0 3px var(--amberbg);
+}
+.brand h1{font-size:15px; font-weight:700; letter-spacing:-.01em}
+.brand .tag{font-size:10.5px; color:var(--tx4); letter-spacing:.04em; line-height:1.45}
+nav{padding:12px 10px; flex:1}
+nav .grp{font-size:10px;letter-spacing:.16em;color:var(--tx4);text-transform:uppercase;padding:14px 8px 7px;font-weight:700}
+nav a{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 10px; border-radius:7px; color:var(--tx2);
+  text-decoration:none; font-size:13px; margin-bottom:2px;
+  transition:background .12s,color .12s; cursor:pointer;
+}
+nav a:hover{background:#241f19;color:var(--tx)}
+nav a.on{background:var(--amberbg);color:var(--amber2);font-weight:600}
+nav a .ic{width:15px;text-align:center;font-size:12.5px;opacity:.85}
+nav a .cnt{
+  margin-left:auto;font-size:10.5px;font-family:var(--mono);
+  background:#2c251d;color:var(--tx3);padding:1px 6px;border-radius:9px;
+}
+nav a.on .cnt{background:rgba(226,164,90,.22);color:var(--amber2)}
+aside footer{
+  padding:13px 16px; border-top:1px solid var(--line);
+  font-size:10.5px; color:var(--tx4); line-height:1.7;
+}
+aside footer b{color:var(--tx3);font-weight:600}
+
+/* ============ MAIN ============ */
+main{flex:1;height:100vh;overflow-y:auto;display:flex;flex-direction:column}
+.topbar{
+  position:sticky;top:0;z-index:20;background:rgba(20,17,14,.94);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line);
+  padding:12px 26px;display:flex;align-items:center;gap:14px;
+}
+.search{
+  flex:1;max-width:420px;display:flex;align-items:center;gap:9px;
+  background:var(--card);border:1px solid var(--line);border-radius:8px;
+  padding:7px 12px;transition:border-color .15s;
+}
+.search:focus-within{border-color:var(--line2);background:var(--card2)}
+.search input{
+  flex:1;background:none;border:none;outline:none;color:var(--tx);
+  font-size:13px;font-family:inherit;
+}
+.search input::placeholder{color:var(--tx4)}
+.search .k{font-size:11px;color:var(--tx4)}
+.stamp{margin-left:auto;font-size:11.5px;color:var(--tx4);display:flex;align-items:center;gap:14px;white-space:nowrap}
+.stamp .live{display:flex;align-items:center;gap:6px;color:var(--green)}
+.stamp .live i{width:6px;height:6px;border-radius:50%;background:var(--green);display:block;animation:pulse 2.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+.content{padding:26px 26px 90px;max-width:1340px;width:100%}
+.view{display:none}
+.view.on{display:block;animation:fade .22s ease}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+h2.page{font-size:21px;font-weight:700;letter-spacing:-.015em;margin-bottom:5px}
+p.lede{color:var(--tx3);font-size:12.8px;margin-bottom:22px}
+
+/* ============ CARDS ============ */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin-bottom:24px}
+.stat{
+  background:var(--card);border:1px solid var(--line);border-radius:9px;
+  padding:14px 16px;position:relative;overflow:hidden;
+}
+.stat .lbl{font-size:11px;color:var(--tx4);letter-spacing:.06em;text-transform:uppercase;font-weight:600;margin-bottom:7px}
+.stat .val{font-size:25px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.15}
+.stat .sub{font-size:11.5px;color:var(--tx4);margin-top:4px}
+.stat.hi{border-left:2px solid var(--red)} .stat.hi .val{color:var(--red-lg)}
+.stat.mi{border-left:2px solid var(--amber)} .stat.mi .val{color:var(--amber2)}
+.stat.lo{border-left:2px solid var(--green)} .stat.lo .val{color:var(--green-lg)}
+.stat.am{border-left:2px solid var(--amber)} .stat.am .val{color:var(--amber2)}
+
+.sec-h{
+  display:flex;align-items:center;gap:11px;margin:30px 0 13px;
+  padding-bottom:9px;border-bottom:1px solid var(--line);
+}
+.sec-h h3{font-size:15px;font-weight:650;letter-spacing:-.01em}
+.sec-h .hint{font-size:11.5px;color:var(--tx4);margin-left:auto}
+
+/* ============ CHANGE ITEM ============ */
+.chg{
+  background:var(--card);border:1px solid var(--line);border-radius:8px;
+  padding:13px 16px;margin-bottom:8px;cursor:pointer;
+  transition:border-color .13s,background .13s;display:flex;gap:14px;align-items:flex-start;
+}
+.chg:hover{border-color:var(--line2);background:var(--card2)}
+.chg .lvl{flex:0 0 3px;align-self:stretch;border-radius:2px;min-height:38px}
+.chg.high .lvl{background:var(--red)} .chg.mid .lvl{background:var(--amber)} .chg.low .lvl{background:var(--green)}
+.chg .body{flex:1;min-width:0}
+.chg .r1{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:3px}
+.chg .mname{font-weight:650;color:var(--tx);font-size:13.5px}
+.chg .plat{
+  font-size:11px;color:var(--tx3);background:var(--card2);border:1px solid var(--line);
+  padding:1.5px 7px;border-radius:5px;white-space:nowrap;
+}
+/* 平台/类型小标签：中性灰底，不抢彩色 */
+.chip{
+  display:inline-block;font-size:10.5px;color:var(--tx3);
+  background:var(--card2);border:1px solid var(--line);
+  padding:1.5px 7px;border-radius:5px;white-space:nowrap;
+}
+.chg .met{font-size:11px;font-family:var(--mono);color:var(--tx4)}
+.chg .r2{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--tx3);flex-wrap:wrap}
+.chg .price{font-family:var(--mono);font-size:12.5px;color:var(--tx2)}
+.chg .arrow{color:var(--tx4)}
+.chg .delta{
+  font-family:var(--mono);font-weight:700;font-size:11.5px;
+  padding:2px 7px;border-radius:5px;
+}
+/* 涨跌幅：小字需 Lc>=75 → 用深底浅字 pill 思路（浅底 + 深字） */
+.up{color:var(--pill-high-fg);background:var(--pill-high-bg)}
+.down{color:var(--pill-low-fg);background:var(--pill-low-bg)}
+.chg .right{flex:0 0 auto;text-align:right;font-size:11px;color:var(--tx4);font-family:var(--mono);white-space:nowrap}
+/* 影响等级标签：中性底 + 语义色文字，避免与左侧色条同色重复铺 */
+.chg .tagl{
+  display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;
+  padding:2px 7px;border-radius:4px;margin-left:2px;
+  background:var(--card2);border:1px solid var(--line2);
+}
+.t-high{color:var(--red-lg)}
+.t-mid{color:var(--amber2)}
+.t-low{color:var(--green-lg)}
+
+/* ============ FILTER BAR ============ */
+.filters{
+  display:flex;gap:9px;align-items:center;flex-wrap:wrap;
+  background:var(--card);border:1px solid var(--line);border-radius:9px;
+  padding:11px 14px;margin-bottom:16px;
+}
+.filters label{font-size:11px;color:var(--tx4);letter-spacing:.05em;text-transform:uppercase;font-weight:600}
+.filters select,.filters input[type=text]{
+  background:var(--panel);border:1px solid var(--line);color:var(--tx);
+  border-radius:6px;padding:5px 9px;font-size:12.5px;font-family:inherit;outline:none;
+}
+.filters select:focus,.filters input:focus{border-color:var(--line2)}
+.filters .sp{width:1px;height:20px;background:var(--line);margin:0 4px}
+.pill{
+  font-size:12px;padding:5px 11px;border-radius:6px;cursor:pointer;
+  border:1px solid var(--line);background:var(--panel);color:var(--tx3);
+  transition:all .13s;font-family:inherit;
+}
+.pill:hover{border-color:var(--line2);color:var(--tx2)}
+.pill.on{background:var(--amberbg);border-color:rgba(226,164,90,.4);color:var(--amber2);font-weight:600}
+
+/* ============ TABLE ============ */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:9px;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:12.8px}
+th{
+  background:var(--card2);color:var(--amber2);text-align:left;padding:9px 12px;
+  font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;
+  white-space:nowrap;border-bottom:1px solid var(--line2);position:sticky;top:0;
+}
+td{padding:9px 12px;border-bottom:1px solid var(--line);color:var(--tx2);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:rgba(226,164,90,.05)}
+td.nm{color:var(--tx);font-weight:600;max-width:290px}
+td.nm .id{display:block;font-size:10.5px;color:var(--tx4);font-family:var(--mono);font-weight:400;margin-top:2px}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--tx);white-space:nowrap}
+td.ctr{text-align:center}
+
+/* ============ PAGER ============ */
+.pager{display:flex;align-items:center;gap:9px;justify-content:center;margin:18px 0;font-size:12.5px;color:var(--tx3)}
+.pager button{
+  background:var(--card);border:1px solid var(--line);color:var(--tx2);
+  border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12.5px;font-family:inherit;
+}
+.pager button:hover:not(:disabled){border-color:var(--line2);color:var(--tx)}
+.pager button:disabled{opacity:.35;cursor:default}
+.pager .cur{font-family:var(--mono);color:var(--amber2);font-weight:600}
+
+/* ============ DRAWER ============ */
+.mask{
+  position:fixed;inset:0;background:rgba(10,8,6,.62);backdrop-filter:blur(2px);
+  z-index:60;opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.mask.on{opacity:1;pointer-events:auto}
+.drawer{
+  position:fixed;top:0;right:0;bottom:0;width:460px;max-width:92vw;
+  background:var(--panel);border-left:1px solid var(--line2);z-index:61;
+  transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;overflow-y:auto;
+}
+.drawer.on{transform:none}
+.dhead{padding:20px 22px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:2}
+.dhead .k{font-size:10.5px;letter-spacing:.15em;color:var(--amber);text-transform:uppercase;font-weight:700;margin-bottom:9px}
+.dhead h3{font-size:17px;font-weight:700;line-height:1.35;margin-bottom:6px}
+.dhead .sub{font-size:12px;color:var(--tx4);font-family:var(--mono)}
+.dclose{position:absolute;top:16px;right:18px;background:none;border:none;color:var(--tx4);font-size:20px;cursor:pointer;line-height:1;padding:4px}
+.dclose:hover{color:var(--tx)}
+.dbody{padding:20px 22px 40px}
+.dsec{margin-bottom:22px}
+.dsec .t{font-size:11px;letter-spacing:.1em;color:var(--tx4);text-transform:uppercase;font-weight:700;margin-bottom:10px}
+.bigprice{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:16px 18px}
+.bigprice .p{font-family:var(--mono);font-size:19px;font-weight:700}
+.bigprice .p.o{color:var(--tx3)}
+.bigprice .p.n{color:var(--tx)}
+.bigprice .ar{color:var(--tx4);font-size:16px}
+.verdict{
+  border-radius:9px;padding:14px 16px;font-size:13px;line-height:1.65;
+  border-left:3px solid var(--line2);background:var(--card);color:var(--tx2);
+}
+.verdict.high{border-left-color:var(--red)} .verdict.mid{border-left-color:var(--amber)} .verdict.low{border-left-color:var(--green)}
+.verdict b{color:var(--tx)}
+.verdict .lbl{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:7px}
+.verdict.high .lbl{color:var(--red)} .verdict.mid .lbl{color:var(--amber)} .verdict.low .lbl{color:var(--green)}
+.kv{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.8px}
+.kv:last-child{border-bottom:none}
+.kv .k{color:var(--tx4)} .kv .v{color:var(--tx2);font-family:var(--mono)}
+.btn{
+  background:var(--amberbg);border:1px solid rgba(226,164,90,.35);color:var(--amber2);
+  border-radius:7px;padding:8px 15px;font-size:12.8px;cursor:pointer;
+  font-family:inherit;font-weight:600;transition:all .13s;width:100%;
+}
+.btn:hover{background:rgba(226,164,90,.2)}
+.btn.ghost{background:var(--card);border-color:var(--line);color:var(--tx2)}
+.btn.ghost:hover{border-color:var(--line2);color:var(--tx)}
+
+/* ============ SPARK / BARS ============ */
+.spark{display:flex;align-items:flex-end;gap:6px;height:56px;margin:4px 0 4px}
+.spark .b{flex:1;max-width:18px;border-radius:3px 3px 0 0;min-height:3px;position:relative;transition:opacity .13s;cursor:default}
+.spark .b:hover{opacity:.7}
+.spark .b.h{background:var(--red)} .spark .b.m{background:var(--amber)} .spark .b.l{background:var(--green)}
+.spark-x{display:flex;justify-content:space-between;font-size:10.5px;color:var(--tx4);font-family:var(--mono)}
+
+/* ============ CALC ============ */
+.calc{display:grid;grid-template-columns:290px 1fr;gap:18px;align-items:start}
+@media(max-width:900px){.calc{grid-template-columns:1fr}}
+.calcbox{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:18px}
+.calcbox .f{margin-bottom:14px}
+.calcbox .f label{display:block;font-size:11.5px;color:var(--tx4);margin-bottom:5px;letter-spacing:.03em}
+.calcbox .f input{
+  width:100%;background:var(--panel);border:1px solid var(--line);color:var(--tx);
+  border-radius:6px;padding:8px 11px;font-size:13.5px;font-family:var(--mono);outline:none;
+}
+.calcbox .f input:focus{border-color:var(--amber)}
+.calcbox .f .hint{font-size:10.5px;color:var(--tx4);margin-top:3px}
+.best{
+  background:linear-gradient(135deg,rgba(226,164,90,.13),var(--card));
+  border:1px solid rgba(226,164,90,.3);border-radius:9px;padding:16px 18px;margin-bottom:16px;
+}
+.best .t{font-size:10.5px;letter-spacing:.12em;color:var(--amber);text-transform:uppercase;font-weight:700;margin-bottom:8px}
+.best .v{font-size:22px;font-weight:700;font-family:var(--mono);letter-spacing:-.02em}
+.best .s{font-size:12.5px;color:var(--tx3);margin-top:5px}
+
+.empty{text-align:center;padding:52px 20px;color:var(--tx4);font-size:13px}
+.empty .ic{font-size:30px;opacity:.35;display:block;margin-bottom:12px}
+
+.banner{
+  background:var(--amberbg);border-left:2px solid var(--amber);
+  border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:20px;
+  font-size:12.8px;color:var(--tx2);
+}
+.banner b{color:var(--amber)}
+
+/* status */
+.svc{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:15px 18px;margin-bottom:9px}
+.svc .nm{font-weight:650;color:var(--tx);font-size:14px;min-width:110px}
+.svc .st{font-size:12px;padding:3px 10px;border-radius:5px;font-weight:600}
+.st.ok{background:var(--greenbg);color:var(--green)}
+.st.deg{background:var(--amberbg);color:var(--amber)}
+.st.bad{background:var(--redbg);color:var(--red)}
+.svc .meta{font-size:11.5px;color:var(--tx4);margin-left:auto;font-family:var(--mono);text-align:right}
+.inc{background:var(--card);border:1px solid var(--line);border-left:2px solid var(--amber);border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:8px}
+.inc .t{font-size:13px;color:var(--tx);font-weight:600;margin-bottom:3px}
+.inc .s{font-size:11.5px;color:var(--tx4);font-family:var(--mono)}
+</style>
+</head>
+<body>
+
+<aside>
+  <div class="brand">
+    <div class="logo"><span class="dot"></span><h1>AI Dev Radar</h1></div>
+    <div class="tag">追踪 AI 开发世界的每一次变化</div>
+  </div>
+  <nav id="nav">
+    <div class="grp">情报</div>
+    <a data-v="dash" class="on"><span class="ic">◆</span>今日情报</a>
+    <a data-v="changes"><span class="ic">◈</span>变化流<span class="cnt" id="c-chg">0</span></a>
+    <a data-v="watch"><span class="ic">★</span>我的关注<span class="cnt" id="c-watch">0</span></a>
+    <div class="grp">数据</div>
+    <a data-v="prices"><span class="ic">⊞</span>价格比较</a>
+    <a data-v="models"><span class="ic">◫</span>模型库<span class="cnt" id="c-mod">0</span></a>
+    <a data-v="status"><span class="ic">◉</span>API 状态</a>
+  </nav>
+  <footer>
+    数据源<br>
+    <b>models.dev</b> · <b>tokencanopy/price</b><br>
+    官方状态页 · 截至 <span id="fdate">—</span>
+  </footer>
+</aside>
+
+<main>
+  <div class="topbar">
+    <div class="search">
+      <span style="color:var(--tx4);font-size:13px">⌕</span>
+      <input id="q" placeholder="搜索模型、厂商、平台…">
+      <span class="k">/</span>
+    </div>
+    <div class="stamp">
+      <span class="live"><i></i>数据已就绪</span>
+      <span id="tb-range">—</span>
+    </div>
+  </div>
+  <div class="content" id="content"></div>
+</main>
+
+<div class="mask" id="mask"></div>
+<div class="drawer" id="drawer"></div>
+
+<script src="data.js"></script>
+<script>
+/* ============================================================
+   AI Dev Radar — 变化层前端
+   底层数据: models.dev (模型库) + tokencanopy/price (价格历史)
+   自研部分: 变化归一化 · 影响判断 · 关注提醒
+   ============================================================ */
+const D = window.__RADAR__, ST = window.__STATUS__;
+const {dates, plats, metrics, kinds, provs, provnames, changes, models} = D;
+
+const MET = {input:'输入', output:'输出', cache_read:'缓存读', cache_write:'缓存写'};
+const KINDN = {chat:'对话/LLM', embed:'向量', rerank:'重排', audio:'语音', image:'图像', video:'视频', guard:'审核'};
+const LVL = ['high','mid','low'];
+const LVLT = {high:'高影响', mid:'中影响', low:'低影响'};
+
+const money = v => v >= 1 ? '$'+v.toFixed(2) : v >= 0.01 ? '$'+v.toFixed(3) : '$'+v.toFixed(4);
+const nfmt = n => n.toLocaleString('en-US');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- 主流厂商判定 ---------- */
+const MAJORS = ['openai','anthropic','google','deepseek','xai','meta','mistral','alibaba','qwen',
+  'moonshot','zhipu','minimax','cohere','amazon','microsoft','nvidia','groq','together','fireworks',
+  'perplexity','baidu','tencent','stepfun','reka','ai21','bytedance','doubao','baichuan','01-ai','yi'];
+const MAJORPROV = m => {
+  const s = (provs[m[0]] + ' ' + provnames[m[0]]).toLowerCase().replace(/\s/g,'');
+  return MAJORS.some(x => s.includes(x));
+};
+
+/* ---------- 影响判断（护城河） ---------- */
+function verdict(c){
+  const [di,pi,k,name,mi,o,n,pct,li,sc] = c;
+  const up = n > o, a = Math.abs(pct), met = MET[metrics[mi]];
+  const pk = plats[pi].toLowerCase().replace(/\s/g,'');
+  const major = ['openai','anthropic','google','deepseek','xai','meta','mistral','alibaba','moonshot','zhipu','minimax','cohere','amazon','microsoft','nvidia','openrouter','groq','together','fireworks','perplexity','baidu','tencent','stepfun','reka'].some(m => pk.includes(m));
+  let head, action;
+  if (up && a >= 50){
+    head = `成本大幅上升 ${a.toFixed(0)}%。`;
+    action = major
+      ? `主流厂商的核心模型调价，影响面广。若你的项目大量调用该模型，建议本周内评估替代方案或改用缓存命中策略。`
+      : `涨幅剧烈。建议核对是否为新版本定价或计量口径变化，避免账单意外。`;
+  } else if (up && a >= 15){
+    head = `成本上升 ${a.toFixed(0)}%。`;
+    action = `中等幅度涨价。若月调用量较大，建议重算预算，并对比同能力档位的替代模型。`;
+  } else if (up){
+    head = `小幅上调 ${a.toFixed(0)}%。`;
+    action = `幅度有限，通常无需立即动作。可加入关注列表，若持续上调再评估。`;
+  } else if (a >= 50){
+    head = `成本大幅下降 ${a.toFixed(0)}%。`;
+    action = major
+      ? `这是值得动作的信号。若此前因价格放弃过该模型，建议重新评估；已使用的话成本会显著下降。`
+      : `降价明显。可纳入候选池，与当前在用模型做一次性价比对比。`;
+  } else if (a >= 15){
+    head = `成本下降 ${a.toFixed(0)}%。`;
+    action = `性价比提升。建议与当前主力模型做一次成本对比，判断是否值得切换。`;
+  } else {
+    head = `小幅下调 ${a.toFixed(0)}%。`;
+    action = `幅度有限，属常规调整，留意即可。`;
+  }
+  return {head, action, up, a, met, major};
+}
+
+/* ---------- 关注列表 ----------
+   两个数据源模型 ID 体系不同（models.dev: deepseek-v4-flash
+   tokencanopy: deepseek-ai/deepseek-v4-flash-0731），统一用归一化键对齐 */
+const WKEY = 'radar.watch.v2';
+let watch = new Set(JSON.parse(localStorage.getItem(WKEY) || '[]'));
+const saveWatch = () => { localStorage.setItem(WKEY, JSON.stringify([...watch])); paintCounts(); };
+const nkey = s => (s||'').toLowerCase().replace(/^[^/]+\//,'').replace(/[^a-z0-9]/g,'');
+const wId = m => nkey(m);
+function toggleWatch(id){ const k = wId(id); watch.has(k) ? watch.delete(k) : watch.add(k); saveWatch(); }
+const isWatched = id => watch.has(wId(id));
+// 变化是否命中关注：精确优先；前缀匹配仅在"只差版本尾巴"时成立（避免 v4-flash 拉进 v4-flash-vision-exp）
+function hitWatch(k){
+  const n = nkey(k);
+  if (watch.has(n)) return true;
+  for (const w of watch){
+    if (n.length < 8 || w.length < 8) continue;
+    const long = n.length >= w.length ? n : w;
+    const short = n.length >= w.length ? w : n;
+    if (long.startsWith(short)){
+      const tail = long.slice(short.length);
+      // 尾巴必须是纯日期/版本号（如 0731、0423、v1），不能是新词（vision、thinking、exp）
+      if (/^(0?\d{3,4}|v\d(\.\d)*|latest|\d{6})$/.test(tail)) return true;
+    }
+  }
+  return false;
+}
+
+/* ---------- 状态 ---------- */
+let route = 'dash';
+let q = '';
+let fLvl = 'all', fMet = 'all', fPlat = 'all', fDays = '7';
+let fKind = 'all', fOnlyMajor = false;
+let page = 1;
+const PAGE = 60;
+
+/* ---------- 派生统计 ---------- */
+const maxDi = dates.length - 1;
+const dayIdx = {};
+changes.forEach(c => { (dayIdx[c[0]] = dayIdx[c[0]] || []).push(c); });
+
+function dayCounts(di){
+  const arr = dayIdx[di] || [];
+  return {t:arr.length, h:arr.filter(c=>c[8]===0).length, m:arr.filter(c=>c[8]===1).length, l:arr.filter(c=>c[8]===2).length};
+}
+const latest = dayCounts(maxDi);
+const prev = dayCounts(maxDi-1);
+
+function windowChanges(days){
+  const from = maxDi - days + 1;
+  return changes.filter(c => c[0] >= from);
+}
+function matchQuery(c){
+  if (!q) return true;
+  const s = q.toLowerCase();
+  return (c[3]||'').toLowerCase().includes(s) || plats[c[1]].toLowerCase().includes(s) || (c[2]||'').toLowerCase().includes(s);
+}
+function filteredChanges(){
+  let arr = fDays === 'all' ? changes.slice() : windowChanges(+fDays);
+  if (fLvl !== 'all') arr = arr.filter(c => LVL[c[8]] === fLvl);
+  if (fMet !== 'all') arr = arr.filter(c => metrics[c[4]] === fMet);
+  if (fPlat !== 'all') arr = arr.filter(c => plats[c[1]] === fPlat);
+  if (q) arr = arr.filter(matchQuery);
+  return arr.reverse(); // 最新在前
+}
+
+/* ---------- 组件 ---------- */
+function chgHTML(c){
+  const [di,pi,k,name,mi,o,n,pct,li,sc] = c;
+  const up = n > o, a = Math.abs(pct);
+  return `<div class="chg ${LVL[li]}" data-k="${esc(k)}" data-p="${pi}" data-d="${dates[di]}">
+    <div class="lvl"></div>
+    <div class="body">
+      <div class="r1">
+        <span class="mname">${esc(name)}</span>
+        <span class="plat">${esc(plats[pi])}</span>
+        <span class="met">${MET[metrics[mi]]}</span>
+        <span class="tagl t-${LVL[li]}">${LVLT[LVL[li]]}</span>
+      </div>
+      <div class="r2">
+        <span class="price">${money(o)}</span>
+        <span class="arrow">→</span>
+        <span class="price">${money(n)}</span>
+        <span class="delta ${up?'up':'down'}">${up?'▲':'▼'} ${a.toFixed(1)}%</span>
+        <span style="color:var(--tx4);font-size:11.5px">/ 1M tokens</span>
+      </div>
+    </div>
+    <div class="right">${dates[di]}</div>
+  </div>`;
+}
+
+function sparkHTML(n){
+  const from = Math.max(0, maxDi - n + 1);
+  let bars = '', mx = 1;
+  for (let i = from; i <= maxDi; i++) mx = Math.max(mx, dayCounts(i).t);
+  for (let i = from; i <= maxDi; i++){
+    const c = dayCounts(i);
+    const h = Math.max(3, Math.round(c.t / mx * 60));
+    // 柱高 = 当日变化总数；颜色 = 高影响占比（占比越高越红），这样才看得出"哪天更严重"
+    const ratio = c.t ? c.h / c.t : 0;
+    const cls = ratio >= 0.22 ? 'h' : ratio >= 0.15 ? 'm' : 'l';
+    bars += `<div class="b ${cls}" style="height:${h}px" title="${dates[i]} · 共 ${c.t} 条变化｜高 ${c.h} 中 ${c.m} 低 ${c.l}（高影响占 ${(ratio*100).toFixed(0)}%）"></div>`;
+  }
+  return `<div class="spark">${bars}</div>
+    <div class="spark-x"><span>${dates[from]}</span><span>${dates[maxDi]}</span></div>`;
+}
+
+/* ============================================================
+   VIEWS
+   ============================================================ */
+function viewDash(){
+  // 今日最值得关注：按模型去重（同一模型多个指标只留一条），优先主计量指标，按幅度排序
+  const pool = (dayIdx[maxDi]||[]).concat(dayIdx[maxDi-1]||[]);
+  const byModel = new Map();
+  pool.slice().sort((a,b) => {
+    const am = metrics[a[4]], bm = metrics[b[4]];
+    const ap = (am==='input'||am==='output') ? 0 : 1;
+    const bp = (bm==='input'||bm==='output') ? 0 : 1;
+    if (ap !== bp) return ap - bp;
+    return Math.abs(b[7]) - Math.abs(a[7]);
+  }).forEach(c => { if (!byModel.has(c[2])) byModel.set(c[2], c); });
+  const top = [...byModel.values()].sort((a,b) => b[9]-a[9] || Math.abs(b[7])-Math.abs(a[7])).slice(0,7);
+
+  const wc = windowChanges(7);
+  const watched = changes.filter(c => hitWatch(c[2])).slice(-8).reverse();
+  const dh = latest.h - prev.h;
+  const dhTxt = dh === 0 ? '与昨日持平' : (dh > 0 ? `较昨日 +${dh}` : `较昨日 ${dh}`);
+
+  return `
+  <h2 class="page">今日情报</h2>
+  <p class="lede">${dates[maxDi]} · 数据源 models.dev + tokencanopy/price，共追踪 ${nfmt(changes.length)} 条历史价格变化</p>
+
+  <div class="stat-row">
+    <div class="stat hi"><div class="lbl">高影响变化</div><div class="val">${latest.h}</div><div class="sub">${dhTxt}</div></div>
+    <div class="stat mi"><div class="lbl">中影响变化</div><div class="val">${latest.m}</div><div class="sub">值得留意</div></div>
+    <div class="stat lo"><div class="lbl">常规更新</div><div class="val">${latest.l}</div><div class="sub">无需动作</div></div>
+    <div class="stat am"><div class="lbl">近 7 天变化</div><div class="val">${nfmt(wc.length)}</div><div class="sub">覆盖 ${new Set(wc.map(c=>plats[c[1]])).size} 个平台</div></div>
+  </div>
+
+  <div class="sec-h"><h3>变化趋势</h3><span class="hint">柱高＝当日变化量 · 柱色＝高影响占比（红≥22% / 黄≥15% / 绿）</span></div>
+  <div style="background:var(--card);border:1px solid var(--line);border-radius:9px;padding:14px 16px 10px">
+    ${sparkHTML(14)}
+  </div>
+
+  ${watched.length ? `
+  <div class="sec-h"><h3>你的关注有动静</h3><span class="hint">${watched.length} 条</span></div>
+  ${watched.map(chgHTML).join('')}` : `
+  <div class="banner">你还没有关注任何模型。<b>点击任意变化条目 → 加入关注</b>，之后这里会汇总你关心的所有变化。</div>`}
+
+  <div class="sec-h"><h3>最值得关注</h3><span class="hint">每个模型一条 · 按影响分排序 · 点击查看影响判断</span></div>
+  ${top.map(chgHTML).join('')}
+
+  <div class="sec-h"><h3>影响判断说明</h3></div>
+  <div style="background:var(--card);border:1px solid var(--line);border-radius:9px;padding:16px 18px;font-size:12.8px;color:var(--tx3);line-height:1.75">
+    每条变化的影响等级由四件事共同决定：<b style="color:var(--tx2)">调整幅度</b>（分档：≥300% / ≥100% / ≥50% / ≥20% / ≥10%）、
+    <b style="color:var(--tx2)">方向</b>（涨价对成本冲击高于降价）、
+    <b style="color:var(--tx2)">厂商权重</b>（主流厂商调价影响面更广）、
+    <b style="color:var(--tx2)">计量指标</b>（输入/输出才是成本主体，缓存读写权重更低）。
+    这不是简单阈值筛选，而是把原始价格变动翻译成「<b style="color:var(--amber2)">你要不要动</b>」。
+  </div>`;
+}
+
+function viewChanges(){
+  const arr = filteredChanges();
+  const total = arr.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE));
+  if (page > pages) page = pages;
+  const slice = arr.slice((page-1)*PAGE, page*PAGE);
+  const allPlats = [...new Set(windowChanges(fDays==='all'?999:+fDays).map(c=>plats[c[1]]))].sort();
+
+  return `
+  <h2 class="page">变化流</h2>
+  <p class="lede">所有被检测到的价格变化，已归一化并完成影响判断</p>
+
+  <div class="filters">
+    <label>时间</label>
+    <button class="pill ${fDays==='1'?'on':''}" data-fd="1">今天</button>
+    <button class="pill ${fDays==='3'?'on':''}" data-fd="3">3 天</button>
+    <button class="pill ${fDays==='7'?'on':''}" data-fd="7">7 天</button>
+    <button class="pill ${fDays==='30'?'on':''}" data-fd="30">30 天</button>
+    <button class="pill ${fDays==='all'?'on':''}" data-fd="all">全部</button>
+    <div class="sp"></div>
+    <label>影响</label>
+    <button class="pill ${fLvl==='all'?'on':''}" data-fl="all">全部</button>
+    <button class="pill ${fLvl==='high'?'on':''}" data-fl="high">高</button>
+    <button class="pill ${fLvl==='mid'?'on':''}" data-fl="mid">中</button>
+    <button class="pill ${fLvl==='low'?'on':''}" data-fl="low">低</button>
+    <div class="sp"></div>
+    <label>指标</label>
+    <select id="fmet">
+      <option value="all">全部</option>
+      ${Object.entries(MET).map(([k,v])=>`<option value="${k}" ${fMet===k?'selected':''}>${v}</option>`).join('')}
+    </select>
+    <label>平台</label>
+    <select id="fplat">
+      <option value="all">全部</option>
+      ${allPlats.map(p=>`<option ${fPlat===p?'selected':''}>${esc(p)}</option>`).join('')}
+    </select>
+    <div class="sp"></div>
+    <span style="font-size:12px;color:var(--tx4);margin-left:auto">共 <b style="color:var(--amber2);font-family:var(--mono)">${nfmt(total)}</b> 条</span>
+  </div>
+
+  ${total ? slice.map(chgHTML).join('') : '<div class="empty"><span class="ic">◌</span>当前筛选条件下没有变化</div>'}
+
+  ${total > PAGE ? `<div class="pager">
+    <button id="pp" ${page<=1?'disabled':''}>← 上一页</button>
+    <span class="cur">${page} / ${pages}</span>
+    <button id="pn" ${page>=pages?'disabled':''}>下一页 →</button>
+  </div>` : ''}`;
+}
+
+function viewPrices(){
+  return `
+  <h2 class="page">价格比较</h2>
+  <p class="lede">按你的实际用量算月成本，而不只是看单价</p>
+
+  <div class="calc">
+    <div class="calcbox">
+      <div class="f">
+        <label>每天请求数</label>
+        <input id="c-req" type="number" value="10000" min="0">
+        <div class="hint">你日均调用 API 的次数</div>
+      </div>
+      <div class="f">
+        <label>平均输入 tokens / 次</label>
+        <input id="c-in" type="number" value="2000" min="0">
+      </div>
+      <div class="f">
+        <label>平均输出 tokens / 次</label>
+        <input id="c-out" type="number" value="1000" min="0">
+      </div>
+      <div class="f">
+        <label>对比模型数</label>
+        <input id="c-top" type="number" value="12" min="3" max="60">
+      </div>
+      <div class="f">
+        <label>范围</label>
+        <select id="c-scope" style="width:100%;background:var(--panel);border:1px solid var(--line);color:var(--tx);border-radius:6px;padding:8px 11px;font-size:13px;font-family:inherit;outline:none">
+          <option value="main">只看主流厂商</option>
+          <option value="chat">全部对话模型</option>
+          <option value="all">全部模型类型</option>
+        </select>
+      </div>
+      <button class="btn" id="c-go">重新计算</button>
+    </div>
+
+    <div>
+      <div class="best" id="c-best"></div>
+      <div class="tw">
+        <table>
+          <thead><tr>
+            <th>模型</th><th>类型</th><th>输入 /1M</th><th>输出 /1M</th><th>缓存读 /1M</th>
+            <th>月成本估算</th><th>相对最低</th>
+          </tr></thead>
+          <tbody id="c-body"></tbody>
+        </table>
+      </div>
+      <p style="font-size:11.5px;color:var(--tx4);margin-top:11px">
+        月成本 = 请求数 × 30 ×（输入 tokens × 输入单价 + 输出 tokens × 输出单价）/ 1,000,000。
+        单价来自 models.dev，仅含标准计费，不含缓存命中、批处理等折扣。
+      </p>
+    </div>
+  </div>`;
+}
+
+function viewModels(){
+  let arr = models;
+  if (fKind !== 'all') arr = arr.filter(m => kinds[m[13]] === fKind);
+  if (fOnlyMajor) arr = arr.filter(m => MAJORPROV(m));
+  if (q){
+    const s = q.toLowerCase();
+    arr = arr.filter(m => (m[2]||'').toLowerCase().includes(s) || provnames[m[0]].toLowerCase().includes(s) || (m[1]||'').toLowerCase().includes(s));
+  }
+  const total = arr.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE));
+  if (page > pages) page = pages;
+  const slice = arr.slice((page-1)*PAGE, page*PAGE);
+  const kindCounts = {};
+  models.forEach(m => { const k = kinds[m[13]]; kindCounts[k] = (kindCounts[k]||0)+1; });
+  return `
+  <h2 class="page">模型库</h2>
+  <p class="lede">${nfmt(models.length)} 个模型 · ${provnames.length} 个 provider · 数据来自 models.dev</p>
+  <div class="filters">
+    <label>类型</label>
+    <button class="pill ${fKind==='all'?'on':''}" data-fk="all">全部</button>
+    ${Object.keys(KINDN).filter(k => kindCounts[k]).map(k =>
+      `<button class="pill ${fKind===k?'on':''}" data-fk="${k}">${KINDN[k]} <span style="opacity:.6">${kindCounts[k]}</span></button>`).join('')}
+    <div class="sp"></div>
+    <button class="pill ${fOnlyMajor?'on':''}" id="fmajor">只看主流厂商</button>
+    <span style="font-size:12px;color:var(--tx4);margin-left:auto">共 <b style="color:var(--amber2);font-family:var(--mono)">${nfmt(total)}</b> 个结果${q?`（搜索：${esc(q)}）`:''}</span>
+  </div>
+  <div class="tw">
+    <table>
+      <thead><tr>
+        <th>模型</th><th>Provider</th><th>类型</th><th>输入 /1M</th><th>输出 /1M</th>
+        <th>上下文</th><th>能力</th><th>发布</th><th></th>
+      </tr></thead>
+      <tbody>${slice.map(m => {
+        const [pi,id,name,ci,co,cc,ctx,mo,rel,rs,tc,ow,md] = m;
+        const caps = [rs?'推理':'', tc?'工具':'', ow?'开源':'', md.includes('image')?'视觉':''].filter(Boolean);
+        return `<tr>
+          <td class="nm">${esc(name)}<span class="id">${esc(id)}</span></td>
+          <td style="color:var(--tx3)">${esc(provnames[pi])}</td>
+          <td><span class="chip">${KINDN[kinds[m[13]]]}</span></td>
+          <td class="num">${ci?money(ci):'—'}</td>
+          <td class="num">${co?money(co):'—'}</td>
+          <td class="num">${ctx?nfmt(ctx):'—'}</td>
+          <td style="font-size:11px;color:var(--tx4)">${caps.join(' · ')||'—'}</td>
+          <td class="num" style="color:var(--tx4)">${rel||'—'}</td>
+          <td class="ctr"><button class="pill ${isWatched(wId(id))?'on':''}" data-w="${esc(id)}" style="padding:3px 8px">${isWatched(wId(id))?'★':'☆'}</button></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+  </div>
+  ${total > PAGE ? `<div class="pager">
+    <button id="pp" ${page<=1?'disabled':''}>← 上一页</button>
+    <span class="cur">${page} / ${pages}</span>
+    <button id="pn" ${page>=pages?'disabled':''}>下一页 →</button>
+  </div>` : ''}`;
+}
+
+function viewStatus(){
+  const svc = ST.services;
+  return `
+  <h2 class="page">API 状态</h2>
+  <p class="lede">官方状态源聚合 · 抓取时间 ${ST.fetched}</p>
+  ${svc.map(s => `
+    <div class="svc">
+      <span class="nm">${esc(s.n)}</span>
+      <span class="st ${s.st==='ok'?'ok':s.st==='degraded'?'deg':'bad'}">${s.st==='ok'?'正常':s.st==='degraded'?'部分降级':'故障'}</span>
+      <span style="font-size:12.5px;color:var(--tx3)">${esc(s.label)}</span>
+      <span class="meta">${s.comps} 个组件 · ${s.bad} 个异常</span>
+    </div>`).join('')}
+  <div class="sec-h"><h3>进行中的事故</h3></div>
+  ${svc.flatMap(s => s.inc.map(i => `
+    <div class="inc">
+      <div class="t">${esc(i.t)}</div>
+      <div class="s">${esc(s.n)} · 状态 ${esc(i.s)} · ${esc(i.d)}</div>
+    </div>`)).join('') || '<div class="empty"><span class="ic">◉</span>当前无进行中的事故</div>'}
+  <p style="font-size:11.5px;color:var(--tx4);margin-top:18px">
+    数据来自 OpenAI / Anthropic 官方状态页（statuspage.io 标准接口）。<br>
+    参考实现：<span style="color:var(--tx3)">study8677/ai-status-hub</span>（MIT）· 扩展端点见其 services.json。
+  </p>`;
+}
+
+function viewWatch(){
+  const list = [...watch];
+  const related = changes.filter(c => hitWatch(c[2])).reverse();
+  const mods = models.filter(m => hitWatch(m[1]));
+  // 按归一化键去重，避免同一模型多 provider 重复显示
+  const seen = new Set(), uniq = [];
+  for (const m of mods){ const k = nkey(m[1]); if (!seen.has(k)){ seen.add(k); uniq.push(m); } }
+  return `
+  <h2 class="page">我的关注</h2>
+  <p class="lede">${uniq.length} 个关注对象 · ${related.length} 条相关变化 · 保存在本地浏览器</p>
+  ${!list.length ? '<div class="empty"><span class="ic">★</span>还没有关注任何模型<br><span style="font-size:12px">在「模型库」或任意变化条目上点击 ☆ 即可关注</span></div>' : `
+    <div class="filters">
+      ${uniq.map(m => `<button class="pill on" data-uw="${esc(m[1])}" title="${esc(m[1])}">★ ${esc(m[2])} ✕</button>`).join('')}
+      ${!uniq.length ? list.map(k => `<button class="pill on" data-uw="${esc(k)}">★ ${esc(k)} ✕</button>`).join('') : ''}
+    </div>
+    <div class="sec-h"><h3>关注对象的变化</h3><span class="hint">${related.length} 条</span></div>
+    ${related.length ? related.slice(0,80).map(chgHTML).join('') : '<div class="empty"><span class="ic">◌</span>关注的对象在已收录的 35 天数据里暂无价格变化</div>'}
+  `}`;
+}
+
+/* ============================================================
+   ROUTER
+   ============================================================ */
+const VIEWS = {dash:viewDash, changes:viewChanges, prices:viewPrices, models:viewModels, status:viewStatus, watch:viewWatch};
+
+function render(){
+  const el = document.getElementById('content');
+  el.innerHTML = VIEWS[route]();
+  window.scrollTo(0,0);
+  document.querySelectorAll('main')[0].scrollTop = 0;
+  if (route === 'prices') calcInit();
+  bind();
+}
+
+function paintCounts(){
+  document.getElementById('c-chg').textContent = nfmt(latest.h + latest.m + latest.l);
+  document.getElementById('c-mod').textContent = nfmt(models.length);
+  document.getElementById('c-watch').textContent = watch.size;
+}
+
+function nav(v){
+  route = v; page = 1;
+  document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('on', a.dataset.v === v));
+  render();
+}
+
+/* ============================================================
+   BINDINGS
+   ============================================================ */
+function bind(){
+  // 变化条目 → 抽屉
+  document.querySelectorAll('.chg').forEach(n => n.onclick = () => openDrawer(n.dataset.k, n.dataset.d, +n.dataset.p));
+
+  // 筛选
+  document.querySelectorAll('[data-fd]').forEach(b => b.onclick = () => { fDays = b.dataset.fd; page = 1; render(); });
+  document.querySelectorAll('[data-fl]').forEach(b => b.onclick = () => { fLvl = b.dataset.fl; page = 1; render(); });
+  const fm = document.getElementById('fmet'); if (fm) fm.onchange = () => { fMet = fm.value; page = 1; render(); };
+  const fp = document.getElementById('fplat'); if (fp) fp.onchange = () => { fPlat = fp.value; page = 1; render(); };
+
+  // 分页
+  const pp = document.getElementById('pp'), pn = document.getElementById('pn');
+  if (pp) pp.onclick = () => { page--; render(); };
+  if (pn) pn.onclick = () => { page++; render(); };
+
+  // 模型库筛选
+  document.querySelectorAll('[data-fk]').forEach(b => b.onclick = () => { fKind = b.dataset.fk; page = 1; render(); });
+  const fmj = document.getElementById('fmajor');
+  if (fmj) fmj.onclick = () => { fOnlyMajor = !fOnlyMajor; page = 1; render(); };
+
+  // 关注
+  document.querySelectorAll('[data-w]').forEach(b => b.onclick = e => { e.stopPropagation(); toggleWatch(b.dataset.w); render(); });
+  document.querySelectorAll('[data-uw]').forEach(b => b.onclick = () => { toggleWatch(b.dataset.uw); render(); });
+}
+
+/* ============================================================
+   DRAWER
+   ============================================================ */
+function openDrawer(key, d, pIdx){
+  const c = changes.find(x => x[2] === key && dates[x[0]] === d && x[1] === pIdx)
+         || changes.find(x => x[2] === key && x[1] === pIdx)
+         || changes.find(x => x[2] === key);
+  if (!c) return;
+  const [di,pi,k,name,mi,o,n,pct,li,sc] = c;
+  const v = verdict(c);
+  const watched = isWatched(k);
+  const allHist = changes.filter(x => x[2] === k).sort((a,b) => a[0]-b[0]);
+  const hist = allHist.slice(-40);          // 只展示最近 40 次，避免柱子过密
+  const spark = (() => {
+    if (hist.length < 2) return '';
+    let bars = '';
+    const mx = Math.max(...hist.map(h=>Math.max(h[5],h[6])));
+    hist.forEach(h => {
+      const hh = Math.max(3, Math.round(Math.max(h[5],h[6]) / mx * 46));
+      const up = h[6] > h[5];
+      bars += `<div class="b ${up?'h':'l'}" style="height:${hh}px" title="${dates[h[0]]} ${MET[metrics[h[4]]]} ${money(h[5])}→${money(h[6])}"></div>`;
+    });
+    return `<div class="spark" style="height:50px">${bars}</div>
+      <div class="spark-x"><span>${dates[hist[0][0]]}</span><span>共 ${allHist.length} 次变动${allHist.length>40?'（显示最近 40 次）':''}</span><span>${dates[hist[hist.length-1][0]]}</span></div>`;
+  })();
+
+  document.getElementById('drawer').innerHTML = `
+    <div class="dhead">
+      <button class="dclose" id="dclose">✕</button>
+      <div class="k">${LVLT[LVL[li]]} · 影响分 ${sc}</div>
+      <h3>${esc(name)}</h3>
+      <div class="sub">${esc(plats[pi])} · ${MET[metrics[mi]]} · ${dates[di]}</div>
+    </div>
+    <div class="dbody">
+      <div class="dsec">
+        <div class="t">价格变动</div>
+        <div class="bigprice">
+          <span class="p o">${money(o)}</span>
+          <span class="ar">→</span>
+          <span class="p n">${money(n)}</span>
+          <span class="delta ${v.up?'up':'down'}" style="margin-left:auto">${v.up?'▲':'▼'} ${Math.abs(pct).toFixed(1)}%</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--tx4);margin-top:8px">单位：美元 / 1M tokens</div>
+      </div>
+
+      <div class="dsec">
+        <div class="t">影响判断</div>
+        <div class="verdict ${LVL[li]}">
+          <span class="lbl">${LVLT[LVL[li]]} · ${v.head}</span>
+          ${v.action}
+        </div>
+      </div>
+
+      <div class="dsec">
+        <div class="t">判断依据</div>
+        <div class="kv"><span class="k">调整幅度</span><span class="v">${Math.abs(pct).toFixed(1)}%</span></div>
+        <div class="kv"><span class="k">方向</span><span class="v">${v.up?'涨价（成本上升）':'降价（成本下降）'}</span></div>
+        <div class="kv"><span class="k">厂商权重</span><span class="v">${v.major?'主流厂商':'其他厂商'}</span></div>
+        <div class="kv"><span class="k">计量指标</span><span class="v">${v.met}</span></div>
+        <div class="kv"><span class="k">综合影响分</span><span class="v">${sc} / 100</span></div>
+      </div>
+
+      ${hist.length > 1 ? `<div class="dsec"><div class="t">该模型的价格历史（${hist.length} 次变动）</div>${spark}</div>` : ''}
+
+      <div class="dsec">
+        <div class="t">模型信息</div>
+        <div class="kv"><span class="k">模型 ID</span><span class="v" style="font-size:11px">${esc(k)}</span></div>
+        <div class="kv"><span class="k">平台</span><span class="v">${esc(plats[pi])}</span></div>
+      </div>
+
+      <button class="btn ${watched?'ghost':''}" id="dwatch">${watched?'★ 已关注 · 点击取消':'☆ 加入关注'}</button>
+    </div>`;
+
+  document.getElementById('mask').classList.add('on');
+  document.getElementById('drawer').classList.add('on');
+  document.getElementById('dclose').onclick = closeDrawer;
+  document.getElementById('dwatch').onclick = () => { toggleWatch(k); openDrawer(key, d, pIdx); };
+}
+function closeDrawer(){
+  document.getElementById('mask').classList.remove('on');
+  document.getElementById('drawer').classList.remove('on');
+}
+
+/* ============================================================
+   成本计算器
+   ============================================================ */
+function calcInit(){
+  const run = () => {
+    const req = +document.getElementById('c-req').value || 0;
+    const tin = +document.getElementById('c-in').value || 0;
+    const tout = +document.getElementById('c-out').value || 0;
+    const top = Math.min(60, Math.max(3, +document.getElementById('c-top').value || 12));
+    const scope = document.getElementById('c-scope').value;
+    const cost = m => (req * 30 * (tin * m[3] + tout * m[4])) / 1e6;
+
+    let pool = models.filter(m => m[3] > 0 && m[4] > 0);
+    if (scope === 'main') pool = pool.filter(m => m[13] === 0 && MAJORPROV(m));
+    else if (scope === 'chat') pool = pool.filter(m => m[13] === 0);
+
+    const arr = pool.map(m => [m, cost(m)]).sort((a,b) => a[1]-b[1]).slice(0, top);
+    if (!arr.length){ document.getElementById('c-body').innerHTML = '<tr><td colspan="7" class="empty">无数据</td></tr>'; return; }
+    const min = arr[0][1] || 1;
+    const worst = arr[arr.length-1][1];
+    document.getElementById('c-best').innerHTML = `
+      <div class="t">按你的用量，最省的选择</div>
+      <div class="v">${money(arr[0][1])} <span style="font-size:13px;color:var(--tx4);font-weight:400">/ 月</span></div>
+      <div class="s">${esc(arr[0][0][2])} · ${esc(provnames[arr[0][0][0]])} —— 比列表中最高省 ${money(worst-arr[0][1])}/月</div>`;
+    document.getElementById('c-body').innerHTML = arr.map(([m, c]) => {
+      const [pi,id,name,ci,co,cc] = m;
+      return `<tr>
+        <td class="nm">${esc(name)}<span class="id">${esc(provnames[pi])}</span></td>
+        <td><span class="chip">${KINDN[kinds[m[13]]]}</span></td>
+        <td class="num">${money(ci)}</td>
+        <td class="num">${money(co)}</td>
+        <td class="num">${cc?money(cc):'—'}</td>
+        <td class="num" style="color:var(--amber2);font-weight:700">${money(c)}</td>
+        <td class="num" style="color:${c/min<1.5?'var(--green)':c/min<3?'var(--amber)':'var(--red)'}">${(c/min).toFixed(2)}×</td>
+      </tr>`;
+    }).join('');
+  };
+  document.getElementById('c-go').onclick = run;
+  ['c-req','c-in','c-out','c-top'].forEach(id => {
+    const el = document.getElementById(id);
+    el.oninput = () => { clearTimeout(el._t); el._t = setTimeout(run, 260); };
+  });
+  document.getElementById('c-scope').onchange = run;
+  run();
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+document.querySelectorAll('#nav a').forEach(a => a.onclick = () => nav(a.dataset.v));
+document.getElementById('mask').onclick = closeDrawer;
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeDrawer();
+  if (e.key === '/' && document.activeElement.tagName !== 'INPUT'){
+    e.preventDefault(); document.getElementById('q').focus();
+  }
+});
+let qt;
+document.getElementById('q').oninput = e => {
+  clearTimeout(qt);
+  qt = setTimeout(() => {
+    q = e.target.value.trim();
+    if (q && route !== 'models' && route !== 'changes') nav('changes');
+    else { page = 1; render(); }
+  }, 240);
+};
+
+document.getElementById('fdate').textContent = dates[maxDi];
+document.getElementById('tb-range').textContent = `${dates[0]} → ${dates[maxDi]} · ${nfmt(changes.length)} 条变化`;
+paintCounts();
+render();
+</script>
+</body>
+</html>

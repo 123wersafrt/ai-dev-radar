@@ -1,0 +1,45 @@
+name: 每日抓取数据
+
+on:
+  schedule:
+    # 每天 01:00 UTC = 北京时间 09:00
+    - cron: '0 1 * * *'
+  workflow_dispatch:        # 支持手动触发
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 抓取数据并生成 data.js
+        env:
+          # GitHub 机房在海外，直连即可；严格模式保证抓取失败不静默沿用旧数据
+          RADAR_PROXY: ''
+          RADAR_STRICT: '1'
+        run: python refresh.py
+
+      - name: 提交更新后的数据
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data.js
+          if git diff --staged --quiet; then
+            echo "数据无变化，跳过提交"
+          else
+            git commit -m "chore: 更新数据 $(date -u '+%Y-%m-%d %H:%M UTC')"
+            git push
+          fi

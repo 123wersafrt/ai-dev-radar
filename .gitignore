@@ -1,0 +1,8 @@
+# 原始数据缓存（每次抓取重新下载，41MB，不入库）
+raw/
+
+# 开发/验证产物
+_shots/
+_audit/*.json
+__pycache__/
+*.pyc
