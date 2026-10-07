@@ -2,7 +2,18 @@
 
 追踪 AI 开发世界的每一次变化。**只自研「变化层」**——底层数据全部复用成熟开源项目。
 
-## 立即打开
+**在线访问**：https://123wersafrt.github.io/ai-dev-radar/
+
+## 自动更新（已配好）
+
+仓库配了 GitHub Actions，**每天早上 9:00（北京时间）自动抓取最新数据并提交**，页面随之更新。
+
+- 工作流：`.github/workflows/daily.yml`
+- 触发：定时（每天 01:00 UTC）+ 支持手动触发（Actions 页 → Run workflow）
+- 关键设计：**GitHub 机房在海外，抓取直连即可，不需要代理**（本地跑才需要）
+- 严格模式：`RADAR_STRICT=1` 保证抓取失败时**任务报错退出**，而不是静默沿用旧数据
+
+## 立即打开（本地）
 
 双击 `index.html` 即可（数据已内联在 `data.js`，`file://` 直开不受 CORS 限制，无需起服务器）。
 
@@ -58,12 +69,24 @@
 
 ## 更新数据
 
+**线上（自动）**：GitHub Actions 每天 09:00 自动跑，无需操作。
+
+**本地（手动）**：
 ```bash
 python refresh.py
 ```
 
-需要本机代理（默认 `http://127.0.0.1:7890`，可用环境变量 `RADAR_PROXY` 覆盖）。
-脚本会重新拉取全部数据源 → 归一化 → 重算影响判断 → 生成 `data.js`。刷新页面即可。
+本地需要代理（默认 `http://127.0.0.1:7890`，可用 `RADAR_PROXY` 覆盖）；
+若在海外网络直连，设 `RADAR_PROXY=''` 关闭代理。
+
+```bash
+# 国内（走代理）
+python refresh.py
+# 海外（直连）
+RADAR_PROXY='' python refresh.py
+# 严格模式（抓取失败即报错，CI 用）
+RADAR_PROXY='' RADAR_STRICT=1 python refresh.py
+```
 
 ## 文件说明
 
@@ -71,10 +94,16 @@ python refresh.py
 index.html     单文件应用（UI + 逻辑，无构建步骤）
 data.js        数据（由 refresh.py 生成，勿手改）
 refresh.py     一键更新数据
-raw/           原始数据缓存（models.json / price_changes.csv）
+.github/workflows/daily.yml   定时抓取工作流
+raw/           原始数据缓存（41MB，已 gitignore）
 verify.mjs     Playwright 自动验证脚本（截图 + 探针）
-_shots/        验证截图
+_audit/        配色校验脚本
+_shots/        验证截图（已 gitignore）
 ```
+
+## 依赖
+
+**零依赖** —— 只用 Python 标准库（`json` / `csv` / `urllib` 等），不需要 `pip install`，不需要数据库，不需要任何 AI 模型或 API key。抓取的是公开免费数据源。
 
 ## 已知边界
 
@@ -82,3 +111,4 @@ _shots/        验证截图
 - 关注列表存在浏览器 `localStorage`，换设备不同步（无后端）。
 - 状态页目前只接了 OpenAI / Anthropic；扩展端点见 ai-status-hub 的 `services.json`。
 - 趋势柱为「高影响占比」着色，阈值 22% / 15% 是按当前数据分布定的，数据量级变化大时需要重调。
+- 数据源若改版或下线，工作流会报错（严格模式），需人工介入。
